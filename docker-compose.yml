@@ -1,0 +1,30 @@
+services:
+  app:
+    container_name: kioureki-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    tty: true
+    env_file:
+      - .env
+    command: go run main.go
+  db:
+    container_name: kioureki-db
+    image: mysql:9.0
+    ports:
+      - ${DB_HOST_PORT}:${DB_CONTAINER_PORT}
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ROOT_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+    restart: always
+    tty: true
