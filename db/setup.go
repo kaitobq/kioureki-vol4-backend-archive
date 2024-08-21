@@ -12,13 +12,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var DB *sql.DB
-
 var queryPaths = []string{
 	"db/query/user.sql",
 }
 
-func ConnectDatabase() {
+func ConnectDatabase() *sql.DB {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -32,7 +30,7 @@ func ConnectDatabase() {
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
 
-	DB, err = sql.Open("mysql", dsn)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,7 +39,7 @@ func ConnectDatabase() {
 
 	time.Sleep(1 * time.Second)
 
-	errors := query.ExecuteSQLFiles(DB, queryPaths)
+	errors := query.ExecuteSQLFiles(db, queryPaths)
 	if len(errors) > 0 {
 		for _, err := range errors {
 			log.Println("Error executing SQL file:", err)
@@ -50,4 +48,6 @@ func ConnectDatabase() {
 	}
 
 	fmt.Println("Executed SQL files successfully")
+
+	return db
 }
