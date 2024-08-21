@@ -30,13 +30,13 @@ func (uc *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
-	user, err := uc.UserUsecase.CreateUser(input.Name, input.Email, input.Password)
+	user, token, err := uc.UserUsecase.CreateUser(input.Name, input.Email, input.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"user": user})
+	c.JSON(http.StatusCreated, gin.H{"user": user, "token": token})
 }
 
 type signInInput struct {
@@ -51,11 +51,11 @@ func (uc *UserController) SignIn(c *gin.Context) {
 		return
 	}
 
-	user, err := uc.UserUsecase.Authenticate(input.Email, input.Password)
+	user, token, err := uc.UserUsecase.Authenticate(input.Email, input.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"user": user})
+	c.JSON(http.StatusOK, gin.H{"user": user, "token": token})
 }
