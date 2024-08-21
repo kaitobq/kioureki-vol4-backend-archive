@@ -25,6 +25,7 @@ func main() {
 	user := r.Group("/user")
 	{
 		user.POST("/signup", userController.SignUp)
+		user.POST("/signin", userController.SignIn)
 	}
 
 	r.Run(":8080")

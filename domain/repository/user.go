@@ -15,7 +15,7 @@ type UserRepository interface {
     FindByEmail(email string) (*entities.User, error)
     CheckEmailAlreadyInUse(email string) (bool, error)
     HashPassword(password string) (string, error)
-    CheckPassword(password string) (bool, error)
+    CheckPassword(userPass, inputPass string) (bool, error)
     Save(user *entities.User) error
 }
 
@@ -31,7 +31,7 @@ func NewMySQLUserRepository(db *sql.DB) *MySQLUserRepository {
 
 func (r *MySQLUserRepository) FindByID(id uint) (*entities.User, error) {
     var user entities.User
-    err := r.DB.QueryRow("SELECT id, name, email FROM users WHERE id = ?", id).Scan(&user.ID, &user.Name, &user.Email)
+    err := r.DB.QueryRow("SELECT id, name, email, password FROM users WHERE id = ?", id).Scan(&user.ID, &user.Name, &user.Email, &user.Password)
     if err != nil {
         return nil, err
     }
@@ -40,7 +40,7 @@ func (r *MySQLUserRepository) FindByID(id uint) (*entities.User, error) {
 
 func (r *MySQLUserRepository) FindByEmail(email string) (*entities.User, error) {
     var user entities.User
-    err := r.DB.QueryRow("SELECT id, name, email FROM users WHERE email = ?", email).Scan(&user.ID, &user.Name, &user.Email)
+    err := r.DB.QueryRow("SELECT id, name, email, password FROM users WHERE email = ?", email).Scan(&user.ID, &user.Name, &user.Email, &user.Password)
     if err != nil {
         return nil, err
     }
@@ -69,17 +69,17 @@ func (r *MySQLUserRepository) HashPassword(password string) (string, error) {
     return string(bytes), nil
 }
 
-func (r *MySQLUserRepository) CheckPassword(password string) (bool, error) {
-    if password == "" || len(password) == 0 {
+func (r *MySQLUserRepository) CheckPassword(userPass, inputPass string) (bool, error) {
+    if inputPass == "" {
         return false, fmt.Errorf("%w", errors.ErrPasswordEmpty)
     }
 
-    err := bcrypt.CompareHashAndPassword([]byte(password), []byte(password))
+    err := bcrypt.CompareHashAndPassword([]byte(userPass), []byte(inputPass))
     if err != nil {
         return false, err
     }
 
-    return false, nil
+    return true, nil
 }
 
 func (r *MySQLUserRepository) Save(user *entities.User) error {

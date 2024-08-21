@@ -38,3 +38,24 @@ func (uc *UserController) SignUp(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"user": user})
 }
+
+type signInInput struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+func (uc *UserController) SignIn(c *gin.Context) {
+	var input signInInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := uc.UserUsecase.Authenticate(input.Email, input.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": user})
+}

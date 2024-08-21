@@ -12,6 +12,7 @@ var (
 
 var (
 	ErrEmailAlreadyInUse = errors.New("email is already in use")
+	ErrInvalidPassword = errors.New("invalid password")
 )
 
 // controller
