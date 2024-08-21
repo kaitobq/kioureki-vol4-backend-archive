@@ -1,13 +1,31 @@
 package main
 
 import (
+	"backend/controllers"
 	"backend/db"
+	"backend/domain/repository"
 	"backend/router"
+	"backend/usecases"
 )
 
 func main() {
-	db.ConnectDatabase()
+	database := db.ConnectDatabase()
+
+	// repository
+	userRepository := repository.NewMySQLUserRepository(database)
+
+	// usecase
+	userUsecase := usecases.NewUserUsecase(userRepository)
+
+	// controller
+	userController := controllers.NewUserController(userUsecase)
 
 	r := router.SetUpRouter()
+
+	user := r.Group("/user")
+	{
+		user.POST("/signup", userController.SignUp)
+	}
+
 	r.Run(":8080")
 }
