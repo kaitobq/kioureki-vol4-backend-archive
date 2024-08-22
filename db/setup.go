@@ -14,6 +14,9 @@ import (
 
 var queryPaths = []string{
 	"db/query/user.sql",
+	"db/query/organization.sql",
+	"db/query/user_organization_invitation.sql",
+	"db/query/user_organization_membership.sql",
 }
 
 func ConnectDatabase() *sql.DB {
