@@ -38,8 +38,21 @@ func (ou *OrganizationUsecase) AddToMemberships(organizationID, userID uint) err
 	return nil
 }
 
-func (ou *OrganizationUsecase) BeforeInvite(organizationID uint, email string) error {
-	userAlreadyInOrganization, err := ou.OrganizationRepository.CheckUserAlreadyInOrganization(organizationID, email)
+func (ou *OrganizationUsecase) BeforeInvite(organizationID uint, email string, userID uint) error {
+	sender, err := ou.UserRepository.FindByID(userID)
+	if err != nil {
+		return err
+	}
+
+	senderJoinedOrganization, err := ou.OrganizationRepository.CheckUserInOrganization(organizationID, sender.Email)
+	if err != nil {
+		return err
+	}
+	if !senderJoinedOrganization {
+		return fmt.Errorf("%w(organizationID: %d)", errors.ErrUserNotInOrganization, organizationID)
+	}
+
+	userAlreadyInOrganization, err := ou.OrganizationRepository.CheckUserInOrganization(organizationID, email)
 	if err != nil {
 		return err
 	}
@@ -72,11 +85,74 @@ func (ou *OrganizationUsecase) InviteUserToOrganization(organizationID uint, ema
 	return nil
 }
 
-func (ou *OrganizationUsecase) GetInvitationsByUserID(userID uint) ([]entities.Organization, error) {
-	organizations, err := ou.OrganizationRepository.GetInvitationsByUserID(userID)
+func (ou *OrganizationUsecase) GetInvitationsByUserID(userID uint) ([]repository.GetInvitedOrganizationsByUserIDOutput, error) {
+	organizations, err := ou.OrganizationRepository.GetInvitedOrganizationsByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
 
 	return organizations, nil
+}
+
+func (ou *OrganizationUsecase) AcceptInvite(invitationID, userID uint) error {
+	invitation, err := ou.OrganizationRepository.GetInvitationByID(invitationID)
+	if err != nil {
+		return err
+	}
+	if invitation.UserID != userID {
+		return fmt.Errorf("%w", errors.ErrNoPermission)
+	}
+
+	err = ou.OrganizationRepository.AddToMemberships(invitation.ID, invitation.UserID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ou *OrganizationUsecase) RejectInvite(invitationID, userID uint) error {
+	invitation, err := ou.OrganizationRepository.GetInvitationByID(invitationID)
+	if err != nil {
+		return err
+	}
+	if invitation.UserID != userID {
+		return fmt.Errorf("%w", errors.ErrNoPermission)
+	}
+
+	err = ou.OrganizationRepository.DeleteInvitation(invitation.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ou *OrganizationUsecase) CancelInvite(invitationID, userID uint) error {
+	invitation, err := ou.OrganizationRepository.GetInvitationByID(invitationID)
+	if err != nil {
+		return err
+	}
+
+	cancelerOrganizations, err := ou.OrganizationRepository.GetUserJoinedOrganization(userID)
+	if err != nil {
+		return err
+	}
+
+	count := 0
+	for _, organization := range cancelerOrganizations {
+		if organization.ID == invitation.OrganizationID {
+			count++
+		}
+	}
+	if count == 0 {
+		return fmt.Errorf("%w", errors.ErrNoPermission)
+	}
+
+	err = ou.OrganizationRepository.DeleteInvitation(invitation.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

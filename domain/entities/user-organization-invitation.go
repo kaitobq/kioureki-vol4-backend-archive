@@ -1,7 +1,7 @@
 package entities
 
 type UserOrganizationInvitation struct {
-	ID             int `json:"id"`
-	UserID         int `json:"user_id"`
-	OrganizationID int `json:"organization_id"`
+	ID             uint `json:"id"`
+	UserID         uint `json:"user_id"`
+	OrganizationID uint `json:"organization_id"`
 }

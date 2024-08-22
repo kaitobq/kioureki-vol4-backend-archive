@@ -9,9 +9,12 @@ type OrganizationRepository interface {
 	Save(organization *entities.Organization) error
 	AddToMemberships(organizationID, userID uint) error
 	AddToInvitations(organizationID, userID uint) error
-	CheckUserAlreadyInOrganization(organizationID uint, email string) (bool, error)
+	CheckUserInOrganization(organizationID uint, email string) (bool, error)
 	CheckAlreadySentInvite(organizationID uint, email string) (bool, error)
-	GetInvitationsByUserID(userID uint) ([]entities.Organization, error)
+	GetInvitedOrganizationsByUserID(userID uint) ([]GetInvitedOrganizationsByUserIDOutput, error)
+	GetInvitationByID(invitationID uint) (*entities.UserOrganizationInvitation, error)
+	DeleteInvitation(invitationID uint) error
+	GetUserJoinedOrganization(userID uint) ([]entities.Organization, error)
 }
 
 type MySQLOrganizationRepository struct {
@@ -55,7 +58,7 @@ func (r *MySQLOrganizationRepository) AddToInvitations(organizationID, userID ui
 	return nil
 }
 
-func (r *MySQLOrganizationRepository) CheckUserAlreadyInOrganization(organizationID uint, email string) (bool, error) {
+func (r *MySQLOrganizationRepository) CheckUserInOrganization(organizationID uint, email string) (bool, error) {
 	var count int
 	err := r.DB.QueryRow("SELECT COUNT(*) FROM user_organization_memberships uom JOIN users u ON uom.user_id = u.id WHERE u.email = ? AND uom.organization_id = ?", email, organizationID).Scan(&count)
 	if err != nil {
@@ -73,8 +76,53 @@ func (r *MySQLOrganizationRepository) CheckAlreadySentInvite(organizationID uint
 	return count > 0, nil
 }
 
-func (r *MySQLOrganizationRepository) GetInvitationsByUserID(userID uint) ([]entities.Organization, error) {
-	rows, err := r.DB.Query("SELECT o.id, o.name FROM organizations o JOIN user_organization_invitations uoi ON o.id = uoi.organization_id WHERE uoi.user_id = ?", userID)
+type GetInvitedOrganizationsByUserIDOutput struct {
+	OrganizationID uint `json:"organization_id"`
+	OrganizationName string `json:"organization_name"`
+	InvitationID uint `json:"invitation_id"`
+}
+
+func (r *MySQLOrganizationRepository) GetInvitedOrganizationsByUserID(userID uint) ([]GetInvitedOrganizationsByUserIDOutput, error) {
+	rows, err := r.DB.Query("SELECT o.id, o.name, uoi.id FROM organizations o JOIN user_organization_invitations uoi ON o.id = uoi.organization_id WHERE uoi.user_id = ?", userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var outputs []GetInvitedOrganizationsByUserIDOutput
+	for rows.Next() {
+		var output GetInvitedOrganizationsByUserIDOutput
+		err := rows.Scan(&output.OrganizationID, &output.OrganizationName, &output.InvitationID)
+		if err != nil {
+			return nil, err
+		}
+		outputs = append(outputs, output)
+	}
+
+	return outputs, nil
+}
+
+func (r *MySQLOrganizationRepository) GetInvitationByID(invitationID uint) (*entities.UserOrganizationInvitation, error) {
+	var invitation entities.UserOrganizationInvitation
+	err := r.DB.QueryRow("SELECT id, user_id, organization_id FROM user_organization_invitations WHERE id = ?", invitationID).Scan(&invitation.ID, &invitation.UserID, &invitation.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &invitation, nil
+}
+
+func (r *MySQLOrganizationRepository) DeleteInvitation(invitationID uint) error {
+	row := r.DB.QueryRow("DELETE FROM user_organization_invitations WHERE id = ?", invitationID)
+	if row.Err() != nil {
+		return row.Err()
+	}
+
+	return nil
+}
+
+func (r *MySQLOrganizationRepository) GetUserJoinedOrganization(userID uint) ([]entities.Organization, error) {
+	rows, err := r.DB.Query("SELECT o.id, o.name FROM organizations o JOIN user_organization_memberships uom ON o.id = uom.organization_id WHERE uom.user_id = ?", userID)
 	if err != nil {
 		return nil, err
 	}
