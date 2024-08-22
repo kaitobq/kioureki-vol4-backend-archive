@@ -5,6 +5,7 @@ import (
 	"backend/db"
 	"backend/domain/repository"
 	"backend/domain/service"
+	"backend/middleware"
 	"backend/router"
 	"backend/usecases"
 )
@@ -38,7 +39,8 @@ func main() {
 
 	organization := r.Group("/organization")
 	{
-		
+		organization.Use(middleware.JwtAuthMiddleware(tokenService))
+		organization.POST("", organizationController.CreateOrganization)
 	}
 
 	r.Run(":8080")
