@@ -59,3 +59,18 @@ func (uc *UserController) SignIn(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"user": user, "token": token})
 }
+
+func (uc *UserController) VerifyToken(c *gin.Context) {
+	valid, err := uc.UserUsecase.TokenService.TokenValid(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"valid": true})
+}

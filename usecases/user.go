@@ -4,16 +4,19 @@ import (
 	"backend/domain/entities"
 	"backend/domain/errors"
 	"backend/domain/repository"
+	"backend/domain/service"
 	"fmt"
 )
 
 type UserUsecase struct {
 	UserRepository repository.UserRepository
+	TokenService   service.TokenService
 }
 
-func NewUserUsecase(userRepo repository.UserRepository) *UserUsecase {
+func NewUserUsecase(userRepo repository.UserRepository, tokenService *service.TokenService) *UserUsecase {
 	return &UserUsecase{
 		UserRepository: userRepo,
+		TokenService:   *tokenService,
 	}
 }
 
@@ -41,7 +44,7 @@ func (u *UserUsecase) CreateUser(name, email, password string) (*entities.User, 
 	}
 
 	// トークンを生成
-	token, err := GenerateTokenFromID(uint(user.ID))
+	token, err := u.TokenService.GenerateTokenFromID(uint(user.ID))
 	if err != nil {
 		return nil, "", err
 	}
@@ -65,7 +68,7 @@ func (u *UserUsecase) Authenticate(email, password string) (*entities.User, stri
 	}
 
 	// トークンを生成
-	token, err := GenerateTokenFromID(uint(user.ID))
+	token, err := u.TokenService.GenerateTokenFromID(uint(user.ID))
 	if err != nil {
 		return nil, "", err
 	}
