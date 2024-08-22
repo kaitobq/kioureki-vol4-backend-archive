@@ -10,6 +10,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var queryPaths = []string{
@@ -50,7 +51,41 @@ func ConnectDatabase() *sql.DB {
 		log.Fatal("Failed to execute some SQL files")
 	}
 
+	// insertMockData(db)
+
 	fmt.Println("Executed SQL files successfully")
 
 	return db
+}
+
+func insertMockData(db *sql.DB) {
+	for i := 1; i <= 10; i++ {
+		name := fmt.Sprintf("user%d", i)
+		email := fmt.Sprintf("user%d@mail.com", i)
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = db.Exec("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", name, email, string(hashedPassword))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	for i := 1; i <= 10; i++ {
+		name := fmt.Sprintf("organization%d", i)
+		_, err := db.Exec("INSERT INTO organizations (name) VALUES (?)", name)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	for i := 1; i <= 10; i++ {
+		_, err := db.Exec("INSERT INTO user_organization_memberships (organization_id, user_id) VALUES (?, ?)", i, i)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	fmt.Println("Inserted mock data successfully")
 }
