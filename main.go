@@ -22,7 +22,7 @@ func main() {
 
 	// usecase
 	userUsecase := usecases.NewUserUsecase(userRepository, tokenService)
-	organizationUsecase := usecases.NewOrganizationUsecase(organizationRepository)
+	organizationUsecase := usecases.NewOrganizationUsecase(organizationRepository, userRepository)
 
 	// controller
 	userController := controllers.NewUserController(userUsecase)
@@ -41,6 +41,9 @@ func main() {
 	{
 		organization.Use(middleware.JwtAuthMiddleware(tokenService))
 		organization.POST("", organizationController.CreateOrganization)
+		organization.POST("/invite", organizationController.InviteUserToOrganization)
+		organization.GET("/invite", organizationController.GetRecievedInvitations)
+		// 招待承認、拒否、削除
 	}
 
 	r.Run(":8080")
