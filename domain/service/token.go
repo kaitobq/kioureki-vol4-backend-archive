@@ -1,4 +1,4 @@
-package usecases
+package service
 
 import (
 	"errors"
@@ -12,7 +12,14 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateTokenFromID(id uint) (string, error) {
+type TokenService struct {
+}
+
+func NewTokenService() *TokenService {
+	return &TokenService{}
+}
+
+func (ts *TokenService) GenerateTokenFromID(id uint) (string, error) {
 	tokenLifeSpanStr := os.Getenv("TOKEN_LIFE_SPAN")
 	if(len(tokenLifeSpanStr) == 0) {
 		return "", fmt.Errorf("TOKEN_LIFE_SPAN is not set in the environment")
@@ -31,26 +38,26 @@ func GenerateTokenFromID(id uint) (string, error) {
 	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }
 
-func TokenValid(c *gin.Context) error {
+func (ts *TokenService) TokenValid(c *gin.Context) (bool, error) {
 	tokenStr, err := getTokenStringFromRequestHeader(c)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	token, err := parseToken(tokenStr)
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if !token.Valid {
-		return fmt.Errorf("token is not valid")
+		return false, nil
 	}
 
-	return nil
+	return true, nil
 }
 
-func ExtractIDFromToken(c *gin.Context) (uint, error) {
+func (ts *TokenService) ExtractIDFromToken(c *gin.Context) (uint, error) {
 	tokenStr, err := getTokenStringFromRequestHeader(c)
 	if err != nil {
 		return 0, err
