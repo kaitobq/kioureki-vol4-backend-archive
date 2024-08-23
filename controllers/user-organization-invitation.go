@@ -61,14 +61,9 @@ func (uoic *UserOrganizationInvitationController) GetSendInvitations(c *gin.Cont
 	c.JSON(http.StatusOK, gin.H{"invitations": response})
 }
 
-
-type acceptInviteInput struct {
-	InvitationID uint `json:"invitation_id" binding:"required"`
-}
-
 func (uoic *UserOrganizationInvitationController) AcceptInvite(c *gin.Context) {
-	var input acceptInviteInput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	req, err := request.NewInviteRequest(c)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -79,7 +74,7 @@ func (uoic *UserOrganizationInvitationController) AcceptInvite(c *gin.Context) {
 		return
 	}
 
-	err = uoic.UserOrganizationInvitationUsecase.AcceptInvite(input.InvitationID, userID)
+	err = uoic.UserOrganizationInvitationUsecase.AcceptInvite(req.InvitationID, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -88,39 +83,9 @@ func (uoic *UserOrganizationInvitationController) AcceptInvite(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "invitation accepted"})
 }
 
-type rejectInviteInput struct {
-	InvitationID uint `json:"invitation_id" binding:"required"`
-}
-
 func (uoic *UserOrganizationInvitationController) RejectInvite(c *gin.Context) {
-	var input rejectInviteInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"errpr": err})
-		return
-	}
-
-	userID, err := uoic.TokenService.ExtractIDFromToken(c)
+	req, err := request.NewInviteRequest(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	err = uoic.UserOrganizationInvitationUsecase.RejectInvite(input.InvitationID, userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "invitation rejected"})
-}
-
-type cancelInviteInput struct {
-	InvitationID uint `json:"invitation_id" binding:"required"`
-}
-
-func (uoic *UserOrganizationInvitationController) CancelInvite(c *gin.Context) {
-	var input cancelInviteInput
-	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -131,7 +96,29 @@ func (uoic *UserOrganizationInvitationController) CancelInvite(c *gin.Context) {
 		return
 	}
 
-	err = uoic.UserOrganizationInvitationUsecase.CancelInvite(input.InvitationID, userID)
+	err = uoic.UserOrganizationInvitationUsecase.RejectInvite(req.InvitationID, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "invitation rejected"})
+}
+
+func (uoic *UserOrganizationInvitationController) CancelInvite(c *gin.Context) {
+	req, err := request.NewInviteRequest(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, err := uoic.TokenService.ExtractIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = uoic.UserOrganizationInvitationUsecase.CancelInvite(req.InvitationID, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

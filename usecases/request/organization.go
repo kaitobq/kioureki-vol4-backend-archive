@@ -7,13 +7,13 @@ type CreateOrganizationRequest struct {
 }
 
 func NewCreateOrganizationRequest(c *gin.Context) (*CreateOrganizationRequest, error) {
-	var request CreateOrganizationRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
+	var req CreateOrganizationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, err
 	}
 
 	return &CreateOrganizationRequest{
-		Name: request.Name,
+		Name: req.Name,
 	}, nil
 }
 
@@ -23,13 +23,10 @@ type InviteUserToOrganizationRequest struct {
 }
 
 func NewInviteUserToOrganizationRequest(c *gin.Context) (*InviteUserToOrganizationRequest, error) {
-	var request InviteUserToOrganizationRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
+	var req InviteUserToOrganizationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, err
 	}
 
-	return &InviteUserToOrganizationRequest{
-		OrganizationId: request.OrganizationId,
-		Email: request.Email,
-	}, nil
+	return &req, nil
 }

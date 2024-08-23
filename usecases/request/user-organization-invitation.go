@@ -19,3 +19,16 @@ func NewGetSendInvitationsRequest(c *gin.Context) *GetSendInvitationsRequest {
 		OrganizationID: uint(organizationID),
 	}
 }
+
+type InviteRequest struct {
+	InvitationID uint `json:"invitation_id" binding:"required"`
+}
+
+func NewInviteRequest(c *gin.Context) (*InviteRequest, error) {
+	var req InviteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return nil, err
+	}
+
+	return &req, nil
+}
