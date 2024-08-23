@@ -28,18 +28,13 @@ func (oc *OrganizationController) CreateOrganization(c *gin.Context) {
 		return
 	}
 
-	organization, err := oc.OrganizationUsecase.CreateOrganization(req.Name)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	userID, err := oc.TokenService.ExtractIDFromToken(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	err = oc.OrganizationUsecase.AddToMemberships(organization.ID, userID)
+
+	organization, err := oc.OrganizationUsecase.CreateOrganization(req.Name, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

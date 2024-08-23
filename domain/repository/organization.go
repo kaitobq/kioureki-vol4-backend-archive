@@ -6,7 +6,7 @@ import (
 )
 
 type OrganizationRepository interface {
-	Save(organization *entities.Organization) error
+	Save(organization *entities.Organization) (*entities.Organization, error)
 	CheckUserInOrganization(organizationID uint, email string) (bool, error)
 	GetUserJoinedOrganization(userID uint) ([]entities.Organization, error)
 	FindByID(organizationID uint) (*entities.Organization, error)
@@ -22,19 +22,19 @@ func NewMySQLOrganizationRepository(db *sql.DB) *MySQLOrganizationRepository {
 	}
 }
 
-func (r *MySQLOrganizationRepository) Save(organization *entities.Organization) error {
+func (r *MySQLOrganizationRepository) Save(organization *entities.Organization) (*entities.Organization, error) {
 	result, err := r.DB.Exec("INSERT INTO organizations (name) VALUES (?)", organization.Name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	organization.ID = uint(id)
 
-	return nil
+	return organization, nil
 }
 
 func (r *MySQLOrganizationRepository) CheckUserInOrganization(organizationID uint, email string) (bool, error) {

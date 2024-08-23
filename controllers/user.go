@@ -25,13 +25,13 @@ func (uc *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
-	user, token, err := uc.UserUsecase.CreateUser(req.Name, req.Email, req.Password)
+	res, err := uc.UserUsecase.CreateUser(req.Name, req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"user": user, "token": token})
+	c.JSON(http.StatusCreated, gin.H{"user": res})
 }
 
 func (uc *UserController) SignIn(c *gin.Context) {
@@ -41,13 +41,13 @@ func (uc *UserController) SignIn(c *gin.Context) {
 		return
 	}
 
-	user, token, err := uc.UserUsecase.Authenticate(req.Email, req.Password)
+	res, err := uc.UserUsecase.Authenticate(req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"user": user, "token": token})
+	c.JSON(http.StatusOK, gin.H{"user": res})
 }
 
 func (uc *UserController) VerifyToken(c *gin.Context) {
@@ -72,13 +72,13 @@ func (uc *UserController) GetJoinedOrganizations(c *gin.Context) {
 		return
 	}
 
-	organizations, err := uc.UserUsecase.GetUserJoinedOrganization(userID)
+	res, err := uc.UserUsecase.GetUserJoinedOrganization(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"organizations": organizations})
+	c.JSON(http.StatusOK, gin.H{"data": res})
 }
 
 func (uc *UserController) GetRecievedInvitations(c *gin.Context) {

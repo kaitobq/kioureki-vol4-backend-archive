@@ -72,7 +72,7 @@ func (uoiu *UserOrganizationInvitationUsecase) InviteUserToOrganization(organiza
 	return nil
 }
 
-func (uoiu *UserOrganizationInvitationUsecase) GetSendInvitationsByOrganizationID(organizationID uint) ([]response.UserOrganizationInvitationResponse, error) {
+func (uoiu *UserOrganizationInvitationUsecase) GetSendInvitationsByOrganizationID(organizationID uint) (*response.UserOrganizationInvitationsResponse, error) {
 	invitations, err := uoiu.UserOrganizationInvitationRepository.GetSendInvitationsByOrganizationID(organizationID)
 	if err != nil {
 		return nil, err
@@ -92,29 +92,29 @@ func (uoiu *UserOrganizationInvitationUsecase) GetSendInvitationsByOrganizationI
 		users = append(users, *user)
 	}
 
-	var responses []response.UserOrganizationInvitationResponse
-	for i, invitation := range invitations {
-		responses = append(responses, *response.NewUserOrganizationInvitationResponse(organization.ID, organization.Name, users[i].ID, users[i].Name, invitation.ID))
-	}
-
-	return responses, nil
+	return response.NewUserOrganizationInvitationsResponse(*organization, users, invitations), nil
 }
 
-func (uoiu *UserOrganizationInvitationUsecase) AcceptInvite(invitationID, userID uint) error {
+func (uoiu *UserOrganizationInvitationUsecase) AcceptInvite(invitationID, userID uint) (*response.OrganizationResponse, error) {
 	invitation, err := uoiu.UserOrganizationInvitationRepository.GetInvitationByID(invitationID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if invitation.UserID != userID {
-		return fmt.Errorf("%w", errors.ErrNoPermission)
+		return nil, fmt.Errorf("%w", errors.ErrNoPermission)
 	}
 
 	err = uoiu.UserOrganizationMembershipRepository.AddToMemberships(invitation.ID, invitation.UserID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	organization, err := uoiu.OrganizationRepository.FindByID(invitation.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.NewOrganizationResponse(organization), nil
 }
 
 
@@ -147,28 +147,24 @@ func (uoiu *UserOrganizationInvitationUsecase) CancelInvite(invitationID, userID
 	return nil
 }
 
-func (uoiu *UserOrganizationInvitationUsecase) RejectInvite(invitationID, userID uint) error {
+func (uoiu *UserOrganizationInvitationUsecase) RejectInvite(invitationID, userID uint) (*response.OrganizationResponse, error) {
 	invitation, err := uoiu.UserOrganizationInvitationRepository.GetInvitationByID(invitationID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if invitation.UserID != userID {
-		return fmt.Errorf("%w", errors.ErrNoPermission)
+		return nil, fmt.Errorf("%w", errors.ErrNoPermission)
 	}
 
 	err = uoiu.UserOrganizationInvitationRepository.DeleteInvitation(invitation.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
-}
-
-func (uoiu *UserOrganizationInvitationUsecase) GetInvitationsByUserID(userID uint) ([]repository.GetRecievedInvitationsByUserIDOutput, error) {
-	organizations, err := uoiu.UserOrganizationInvitationRepository.GetRecievedInvitationsByUserID(userID)
+	rejectedOrganization, err := uoiu.OrganizationRepository.FindByID(invitation.OrganizationID)
 	if err != nil {
 		return nil, err
 	}
 
-	return organizations, nil
+	return response.NewOrganizationResponse(rejectedOrganization), nil
 }

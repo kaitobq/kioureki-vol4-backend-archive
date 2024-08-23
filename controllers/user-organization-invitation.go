@@ -52,13 +52,13 @@ func (uoic *UserOrganizationInvitationController) InviteUserToOrganization(c *gi
 func (uoic *UserOrganizationInvitationController) GetSendInvitations(c *gin.Context) {
 	req := request.NewGetSendInvitationsRequest(c)
 
-	response, err := uoic.UserOrganizationInvitationUsecase.GetSendInvitationsByOrganizationID(req.OrganizationID)
+	res, err := uoic.UserOrganizationInvitationUsecase.GetSendInvitationsByOrganizationID(req.OrganizationID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"invitations": response})
+	c.JSON(http.StatusOK, gin.H{"invitations": res})
 }
 
 func (uoic *UserOrganizationInvitationController) AcceptInvite(c *gin.Context) {
@@ -74,13 +74,13 @@ func (uoic *UserOrganizationInvitationController) AcceptInvite(c *gin.Context) {
 		return
 	}
 
-	err = uoic.UserOrganizationInvitationUsecase.AcceptInvite(req.InvitationID, userID)
+	res, err := uoic.UserOrganizationInvitationUsecase.AcceptInvite(req.InvitationID, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "invitation accepted"})
+	c.JSON(http.StatusOK, gin.H{"organization": res})
 }
 
 func (uoic *UserOrganizationInvitationController) RejectInvite(c *gin.Context) {
@@ -96,13 +96,13 @@ func (uoic *UserOrganizationInvitationController) RejectInvite(c *gin.Context) {
 		return
 	}
 
-	err = uoic.UserOrganizationInvitationUsecase.RejectInvite(req.InvitationID, userID)
+	rejectedOrganization, err := uoic.UserOrganizationInvitationUsecase.RejectInvite(req.InvitationID, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "invitation rejected"})
+	c.JSON(http.StatusOK, gin.H{"organization": rejectedOrganization})
 }
 
 func (uoic *UserOrganizationInvitationController) CancelInvite(c *gin.Context) {

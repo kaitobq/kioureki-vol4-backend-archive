@@ -3,6 +3,7 @@ package usecases
 import (
 	"backend/domain/entities"
 	"backend/domain/repository"
+	"backend/usecases/response"
 )
 
 type OrganizationUsecase struct {
@@ -19,22 +20,19 @@ func NewOrganizationUsecase(organizationRepo repository.OrganizationRepository, 
 	}
 }
 
-func (ou * OrganizationUsecase) CreateOrganization(name string) (*entities.Organization, error) {
+func (ou * OrganizationUsecase) CreateOrganization(name string, userID uint) (*response.OrganizationResponse, error) {
 	organization := &entities.Organization{Name: name}
-	err := ou.OrganizationRepository.Save(organization)
+	createdOrganization, err := ou.OrganizationRepository.Save(organization)
 	if err != nil {
 		return nil, err
 	}
 
-	return organization, nil
-}
-
-func (ou *OrganizationUsecase) AddToMemberships(organizationID, userID uint) error {
-	err := ou.UserOrganizationMembershipRepository.AddToMemberships(organizationID, userID)
+	err = ou.UserOrganizationMembershipRepository.AddToMemberships(organization.ID, userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return response.NewOrganizationResponse(createdOrganization), nil
 }
+
 
