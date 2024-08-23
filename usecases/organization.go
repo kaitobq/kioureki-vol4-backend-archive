@@ -4,6 +4,7 @@ import (
 	"backend/domain/entities"
 	"backend/domain/errors"
 	"backend/domain/repository"
+	"backend/usecases/response"
 	"fmt"
 )
 
@@ -85,8 +86,8 @@ func (ou *OrganizationUsecase) InviteUserToOrganization(organizationID uint, ema
 	return nil
 }
 
-func (ou *OrganizationUsecase) GetInvitationsByUserID(userID uint) ([]repository.GetInvitedOrganizationsByUserIDOutput, error) {
-	organizations, err := ou.OrganizationRepository.GetInvitedOrganizationsByUserID(userID)
+func (ou *OrganizationUsecase) GetInvitationsByUserID(userID uint) ([]repository.GetRecievedInvitationsByUserIDOutput, error) {
+	organizations, err := ou.OrganizationRepository.GetRecievedInvitationsByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -155,4 +156,32 @@ func (ou *OrganizationUsecase) CancelInvite(invitationID, userID uint) error {
 	}
 
 	return nil
+}
+
+func (ou *OrganizationUsecase) GetSendInvitationsByOrganizationID(organizationID uint) ([]response.UserOrganizationInvitationResponse, error) {
+	invitations, err := ou.OrganizationRepository.GetSendInvitationsByOrganizationID(organizationID)
+	if err != nil {
+		return nil, err
+	}
+
+	organization, err := ou.OrganizationRepository.FindByID(organizationID)
+	if err != nil {
+		return nil, err
+	}
+
+	var users []entities.User
+	for _, invitation := range invitations {
+		user, err := ou.UserRepository.FindByID(invitation.UserID)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, *user)
+	}
+
+	var responses []response.UserOrganizationInvitationResponse
+	for i, invitation := range invitations {
+		responses = append(responses, *response.NewUserOrganizationInvitationResponse(organization.ID, organization.Name, users[i].ID, users[i].Name, invitation.ID))
+	}
+
+	return responses, nil
 }

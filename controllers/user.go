@@ -74,3 +74,35 @@ func (uc *UserController) VerifyToken(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"valid": true})
 }
+
+func (uc *UserController) GetJoinedOrganizations(c *gin.Context) {
+	userID, err := uc.UserUsecase.TokenService.ExtractIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	organizations, err := uc.UserUsecase.GetUserJoinedOrganization(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"organizations": organizations})
+}
+
+func (uc *UserController) GetRecievedInvitations(c *gin.Context) {
+	userID, err := uc.UserUsecase.TokenService.ExtractIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	organizations, err := uc.UserUsecase.GetRecievedInvitationsByUserID(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"organizations": organizations})
+}

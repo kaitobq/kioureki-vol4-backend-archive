@@ -21,7 +21,7 @@ func main() {
 	tokenService := service.NewTokenService()
 
 	// usecase
-	userUsecase := usecases.NewUserUsecase(userRepository, tokenService)
+	userUsecase := usecases.NewUserUsecase(userRepository, tokenService, organizationRepository)
 	organizationUsecase := usecases.NewOrganizationUsecase(organizationRepository, userRepository)
 
 	// controller
@@ -35,6 +35,8 @@ func main() {
 		user.POST("/signup", userController.SignUp)
 		user.POST("/signin", userController.SignIn)
 		user.GET("/verify", userController.VerifyToken)
+		user.GET("/organization", userController.GetJoinedOrganizations) // フロントでフェッチをまとめるために、招待を受けている組織もまとめて取得したい
+		user.GET("/organization/invite", userController.GetRecievedInvitations)
 	}
 
 	organization := r.Group("/organization")
@@ -43,7 +45,7 @@ func main() {
 		organization.POST("", organizationController.CreateOrganization)
 		organization.POST("/invite", organizationController.InviteUserToOrganization)
 		organization.POST("/invite/cancel", organizationController.CancelInvite)
-		organization.GET("/invite", organizationController.GetRecievedInvitations)
+		organization.GET("/:id/invite", organizationController.GetSendInvitations)
 		organization.POST("/invite/accept", organizationController.AcceptInvite)
 		organization.POST("/invite/reject", organizationController.RejectInvite)
 	}

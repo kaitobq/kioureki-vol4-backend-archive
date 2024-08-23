@@ -3,6 +3,7 @@ package controllers
 import (
 	"backend/domain/service"
 	"backend/usecases"
+	"backend/usecases/request"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -84,20 +85,32 @@ func (oc *OrganizationController) InviteUserToOrganization(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Invitation sent"})
 }
 
-func (oc *OrganizationController) GetRecievedInvitations(c *gin.Context) {
-	userID, err := oc.TokenService.ExtractIDFromToken(c)
+// func (oc *OrganizationController) GetRecievedInvitations(c *gin.Context) { // getsendinginvitations change
+// 	userID, err := oc.TokenService.ExtractIDFromToken(c)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	organizations, err := oc.OrganizationUsecase.GetInvitationsByUserID(userID)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{"organizations": organizations})
+// }
+
+func (oc *OrganizationController) GetSendInvitations(c *gin.Context) {
+	request := request.NewGetSendInvitationsRequest(c)
+
+	response, err := oc.OrganizationUsecase.GetSendInvitationsByOrganizationID(request.OrganizationID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	organizations, err := oc.OrganizationUsecase.GetInvitationsByUserID(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"organizations": organizations})
+	c.JSON(http.StatusOK, gin.H{"invitations": response})
 }
 
 type acceptInviteInput struct {

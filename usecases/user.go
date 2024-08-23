@@ -9,14 +9,16 @@ import (
 )
 
 type UserUsecase struct {
-	UserRepository repository.UserRepository
-	TokenService   service.TokenService
+	UserRepository         repository.UserRepository
+	TokenService           service.TokenService
+	OrganizationRepository repository.OrganizationRepository
 }
 
-func NewUserUsecase(userRepo repository.UserRepository, tokenService *service.TokenService) *UserUsecase {
+func NewUserUsecase(userRepo repository.UserRepository, tokenService *service.TokenService, organizationRepo repository.OrganizationRepository) *UserUsecase {
 	return &UserUsecase{
 		UserRepository: userRepo,
 		TokenService:   *tokenService,
+		OrganizationRepository: organizationRepo,
 	}
 }
 
@@ -74,4 +76,22 @@ func (u *UserUsecase) Authenticate(email, password string) (*entities.User, stri
 	}
 
 	return user, token, nil
+}
+
+func (u *UserUsecase) GetUserJoinedOrganization(userID uint) ([]entities.Organization, error) {
+	organizations, err := u.OrganizationRepository.GetUserJoinedOrganization(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return organizations, nil
+}
+
+func (u *UserUsecase) GetRecievedInvitationsByUserID(userID uint) ([]repository.GetRecievedInvitationsByUserIDOutput, error) {
+	organizations, err := u.OrganizationRepository.GetRecievedInvitationsByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return organizations, nil
 }

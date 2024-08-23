@@ -11,10 +11,12 @@ type OrganizationRepository interface {
 	AddToInvitations(organizationID, userID uint) error
 	CheckUserInOrganization(organizationID uint, email string) (bool, error)
 	CheckAlreadySentInvite(organizationID uint, email string) (bool, error)
-	GetInvitedOrganizationsByUserID(userID uint) ([]GetInvitedOrganizationsByUserIDOutput, error)
+	GetRecievedInvitationsByUserID(userID uint) ([]GetRecievedInvitationsByUserIDOutput, error)
+	GetSendInvitationsByOrganizationID(userID uint) ([]entities.UserOrganizationInvitation, error)
 	GetInvitationByID(invitationID uint) (*entities.UserOrganizationInvitation, error)
 	DeleteInvitation(invitationID uint) error
 	GetUserJoinedOrganization(userID uint) ([]entities.Organization, error)
+	FindByID(organizationID uint) (*entities.Organization, error)
 }
 
 type MySQLOrganizationRepository struct {
@@ -76,22 +78,22 @@ func (r *MySQLOrganizationRepository) CheckAlreadySentInvite(organizationID uint
 	return count > 0, nil
 }
 
-type GetInvitedOrganizationsByUserIDOutput struct {
+type GetRecievedInvitationsByUserIDOutput struct {
 	OrganizationID uint `json:"organization_id"`
 	OrganizationName string `json:"organization_name"`
 	InvitationID uint `json:"invitation_id"`
 }
 
-func (r *MySQLOrganizationRepository) GetInvitedOrganizationsByUserID(userID uint) ([]GetInvitedOrganizationsByUserIDOutput, error) {
+func (r *MySQLOrganizationRepository) GetRecievedInvitationsByUserID(userID uint) ([]GetRecievedInvitationsByUserIDOutput, error) {
 	rows, err := r.DB.Query("SELECT o.id, o.name, uoi.id FROM organizations o JOIN user_organization_invitations uoi ON o.id = uoi.organization_id WHERE uoi.user_id = ?", userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var outputs []GetInvitedOrganizationsByUserIDOutput
+	var outputs []GetRecievedInvitationsByUserIDOutput
 	for rows.Next() {
-		var output GetInvitedOrganizationsByUserIDOutput
+		var output GetRecievedInvitationsByUserIDOutput
 		err := rows.Scan(&output.OrganizationID, &output.OrganizationName, &output.InvitationID)
 		if err != nil {
 			return nil, err
@@ -100,6 +102,26 @@ func (r *MySQLOrganizationRepository) GetInvitedOrganizationsByUserID(userID uin
 	}
 
 	return outputs, nil
+}
+
+func (r *MySQLOrganizationRepository) GetSendInvitationsByOrganizationID(organizationID uint) ([]entities.UserOrganizationInvitation, error) {
+	rows, err := r.DB.Query("SELECT id, user_id, organization_id FROM user_organization_invitations WHERE organization_id = ?", organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var invitations []entities.UserOrganizationInvitation
+	for rows.Next() {
+		var invitation entities.UserOrganizationInvitation
+		err := rows.Scan(&invitation.ID, &invitation.UserID, &invitation.OrganizationID)
+		if err != nil {
+			return nil, err
+		}
+		invitations = append(invitations, invitation)
+	}
+
+	return invitations, nil
 }
 
 func (r *MySQLOrganizationRepository) GetInvitationByID(invitationID uint) (*entities.UserOrganizationInvitation, error) {
@@ -139,4 +161,14 @@ func (r *MySQLOrganizationRepository) GetUserJoinedOrganization(userID uint) ([]
 	}
 
 	return organizations, nil
+}
+
+func (r *MySQLOrganizationRepository) FindByID(organizationID uint) (*entities.Organization, error) {
+	var organization entities.Organization
+	err := r.DB.QueryRow("SELECT id, name FROM organizations WHERE id = ?", organizationID).Scan(&organization.ID, &organization.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &organization, nil
 }
