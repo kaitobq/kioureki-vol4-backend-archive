@@ -9,9 +9,10 @@ import (
 )
 
 type UserUsecase struct {
-	UserRepository         repository.UserRepository
-	TokenService           service.TokenService
-	OrganizationRepository repository.OrganizationRepository
+	UserRepository                       repository.UserRepository
+	TokenService                         service.TokenService
+	OrganizationRepository               repository.OrganizationRepository
+	UserOrganizationInvitationRepository repository.UserOrganizationInvitationRepository
 }
 
 func NewUserUsecase(userRepo repository.UserRepository, tokenService *service.TokenService, organizationRepo repository.OrganizationRepository) *UserUsecase {
@@ -88,7 +89,7 @@ func (u *UserUsecase) GetUserJoinedOrganization(userID uint) ([]entities.Organiz
 }
 
 func (u *UserUsecase) GetRecievedInvitationsByUserID(userID uint) ([]repository.GetRecievedInvitationsByUserIDOutput, error) {
-	organizations, err := u.OrganizationRepository.GetRecievedInvitationsByUserID(userID)
+	organizations, err := u.UserOrganizationInvitationRepository.GetRecievedInvitationsByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
