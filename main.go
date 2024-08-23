@@ -16,17 +16,23 @@ func main() {
 	// repository
 	userRepository := repository.NewMySQLUserRepository(database)
 	organizationRepository := repository.NewMySQLOrganizationRepository(database)
+	userOrganizationInvitationRepository := repository.NewMySQLUserOrganizationInvitationRepository(database)
+	userOrganizationMembershipRepository := repository.NewMySQLUserOrganizationMembershipRepository(database)
 
 	// service
 	tokenService := service.NewTokenService()
 
 	// usecase
 	userUsecase := usecases.NewUserUsecase(userRepository, tokenService, organizationRepository)
-	organizationUsecase := usecases.NewOrganizationUsecase(organizationRepository, userRepository)
+	organizationUsecase := usecases.NewOrganizationUsecase(organizationRepository, userOrganizationMembershipRepository, userRepository)
+	userOrganizationInvitationUsecase := usecases.NewUserOrganizationInvitationUsecase(userOrganizationInvitationRepository, userOrganizationMembershipRepository, organizationRepository, userRepository)
+	// userOrganizationMembershipUsecase := usecases.NewUserOrganizationMembershipUsecase(userOrganizationMembershipRepository)
 
 	// controller
 	userController := controllers.NewUserController(userUsecase)
 	organizationController := controllers.NewOrganizationController(organizationUsecase)
+	userOrganizationInvitationController := controllers.NewUserOrganizationInvitationController(userOrganizationInvitationUsecase, tokenService)
+	// userOrganizationMembershipController := controllers.NewUserOrganizationMembershipController(userOrganizationMembershipUsecase, tokenService)
 
 	r := router.SetUpRouter()
 
@@ -41,13 +47,16 @@ func main() {
 
 	organization := r.Group("/organization")
 	{
+		// organization
 		organization.Use(middleware.JwtAuthMiddleware(tokenService))
 		organization.POST("", organizationController.CreateOrganization)
-		organization.POST("/invite", organizationController.InviteUserToOrganization)
-		organization.POST("/invite/cancel", organizationController.CancelInvite)
-		organization.GET("/:id/invite", organizationController.GetSendInvitations)
-		organization.POST("/invite/accept", organizationController.AcceptInvite)
-		organization.POST("/invite/reject", organizationController.RejectInvite)
+
+		// invitation
+		organization.POST("/invite", userOrganizationInvitationController.InviteUserToOrganization)
+		organization.POST("/invite/cancel", userOrganizationInvitationController.CancelInvite)
+		organization.GET("/:id/invite", userOrganizationInvitationController.GetSendInvitations)
+		organization.POST("/invite/accept", userOrganizationInvitationController.AcceptInvite)
+		organization.POST("/invite/reject", userOrganizationInvitationController.RejectInvite)
 	}
 
 	r.Run(":8080")
